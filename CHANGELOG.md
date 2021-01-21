@@ -1,5 +1,7 @@
 ### Unreleased
 
+- Fix for #900 to close the properties modal when we click outside modal
+
 ### 2.5.1
 
 - Fix for #837 and chekboxes not displaying error messages #843
