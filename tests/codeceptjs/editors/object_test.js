@@ -163,6 +163,6 @@ Scenario('should open and close the properties modal', (I) => {
   I.seeElement('.json-editor-btn-edit_properties');
   I.click('.json-editor-btn-edit_properties');
   I.seeElement('.je-modal .property-selector');
-  I.click('.json-editor-btn-edit');
+  I.click('textarea');
   I.dontSeeElement('.je-modal .property-selector');
 });
