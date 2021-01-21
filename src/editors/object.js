@@ -637,7 +637,7 @@ export class ObjectEditor extends AbstractEditor {
       this.addproperty_holder.appendChild(spacer)
 
       /* Close properties modal if clicked outside modal */
-      document.addEventListener('click', this.onOutsideModalClick)
+      document.addEventListener('click', this.onOutsideModalClick.bind(this))
 
       /* Description */
       if (this.schema.description) {

@@ -157,3 +157,12 @@ Scenario('should hide properties with unfulfilled dependencies', (I) => {
   I.seeElement('[data-schemapath="root.make_new"] input');
   I.dontSeeElement('[data-schemapath="root.existing_name"] input');
 });
+
+Scenario('should open and close the properties modal', (I) => {
+  I.amOnPage('object.html');
+  I.seeElement('.json-editor-btn-edit_properties');
+  I.click('.json-editor-btn-edit_properties');
+  I.seeElement('.je-modal .property-selector');
+  I.click('.json-editor-btn-edit');
+  I.dontSeeElement('.je-modal .property-selector');
+});
