@@ -4,7 +4,7 @@
 - add Open Iconic iconlib
 - switched CI to Github Actions
 - read-only base64 editors respect enum values when calling setValue()
-
+- fixed arbitrary JSON pointers not returning the schema at the pointer path
 ### 2.5.3
 
 - fix oneOf and anyOf error messages
