@@ -521,7 +521,7 @@ Some of The [hyper-schema][hyper] specification is supported as well.
 
 ### $ref and definitions
 
-JSON Editor supports schema references to external URLs and local definitions.  Here's an example showing both:
+JSON Editor supports schema references to external URLs and local definitions as well as JSON Pointers.  Here's an example:
 
 ```json
 {
@@ -533,6 +533,9 @@ JSON Editor supports schema references to external URLs and local definitions.  
     },
     "location": {
       "$ref": "http://mydomain.com/geo.json"
+    },
+    "birthday": {
+      "$ref": "http://mydomain.com/person.json#/definitions/birthdate"
     }
   },
   "definitions": {
