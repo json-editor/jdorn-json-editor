@@ -264,7 +264,8 @@ describe('SchemaLoader', () => {
             properties: {
               Product: { $ref: '/common.schema.json#/definitions/known-product' }
             }
-          }
+          },
+          'test-4': { $ref: '/common.schema.json#/properties/customer' }
         }
       }
       const schema2 = {
@@ -297,7 +298,7 @@ describe('SchemaLoader', () => {
         schema1,
         schema => {
           console.log(loader.refs)
-          expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs).length).toBe(3)
           done()
           server.restore()
         },
@@ -319,7 +320,8 @@ describe('SchemaLoader', () => {
             properties: {
               Product: { $ref: 'common.schema.json#/definitions/known-product' }
             }
-          }
+          },
+          'test-4': { $ref: '/common.schema.json#/properties/customer' }
         }
       }
       const schema2 = {
@@ -352,7 +354,7 @@ describe('SchemaLoader', () => {
         schema1,
         schema => {
           console.log(loader.refs)
-          expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs).length).toBe(4)
           done()
           server.restore()
         },

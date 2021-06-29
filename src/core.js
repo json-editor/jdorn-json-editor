@@ -62,7 +62,7 @@ export class JSONEditor {
     const loader = new SchemaLoader(this.options)
     const location = document.location.toString()
 
-    this.expandSchema = (schema, fileBase) => loader.expandSchema(schema, fileBase)
+    this.expandSchema = (schema) => loader.expandSchema(schema)
     this.expandRefs = (schema, fileBase) => loader.expandRefs(schema, fileBase)
     this.refs = loader.refs
 
