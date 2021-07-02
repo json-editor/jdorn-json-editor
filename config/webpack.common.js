@@ -70,6 +70,6 @@ module.exports = {
   devServer: {
     contentBase: helpers.root('.'),
     historyApiFallback: true,
-    port: 8080
+    port: 9002
   }
 }

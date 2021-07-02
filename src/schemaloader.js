@@ -1,5 +1,8 @@
 import { extend, hasOwnProperty } from './utilities.js'
 
+/**
+ * Handles loading Schema and tracking references.
+ */
 export class SchemaLoader {
   constructor (options) {
     this.options = options || {}
@@ -80,6 +83,18 @@ export class SchemaLoader {
     }
   }
 
+  /**
+   * Fully loads and expands JSON schema for a provided schema object and URL.
+   *
+   * The callback receives a expanded JSON Schema object with references
+   * replaced with loaded schemas.
+   *
+   * @param {object} schema - A JSON Schema.
+   * @param {function} callback - A function that takes a JSON object argument.
+   * @param {string} fetchUrl - Base path from which to store the definitions.
+   *   Typically the URI of the schema.
+   * @param {*} location - The base URL from which to load relative paths.
+   */
   load (schema, callback, fetchUrl, location) {
     this._loadExternalRefs(schema, () => {
       this._getDefinitions(schema, `${fetchUrl}#/definitions/`)
@@ -87,6 +102,13 @@ export class SchemaLoader {
     }, fetchUrl, this._getFileBase(location))
   }
 
+  /**
+   * Recursively expands loaded references in a provided schema.
+   *
+   * @param {object} schema - A JSON Schema with references already loaded.
+   * @param {boolean} recurseAllOf - Set true to recurse allOf properties.
+   * @returns {object} A JSON Schema with references expanded.
+   */
   expandRefs (schema, recurseAllOf) {
     const _schema = extend({}, schema)
     if (!_schema.$ref) return _schema
@@ -110,7 +132,13 @@ export class SchemaLoader {
     return this.extendSchemas(_schema, this.expandSchema(this.refs[ref]))
   }
 
-  expandSchema (schema, fileBase) {
+  /**
+   * Expands a JSON schema and its references.
+   *
+   * @param {object} schema - A JSON Schema with references already loaded.
+   * @returns {object} A JSON Schema with references expanded.
+   */
+  expandSchema (schema) {
     Object.entries(this._subSchema1).forEach(([key, func]) => {
       if (schema[key]) {
         func.call(this, schema)
@@ -142,6 +170,13 @@ export class SchemaLoader {
     return this.expandSchema(subschema)
   }
 
+  /**
+   * Populates the refs object from provided schema definitions.
+   *
+   * @param {object} schema - A JSON Schema with the definitions key present.
+   * @param {string} path - Base path from which to store the definitions in refs.
+   *   Typically the URI of the schema.
+   */
   _getDefinitions (schema, path) {
     if (schema.definitions) {
       Object.keys(schema.definitions).forEach(i => {
@@ -153,16 +188,28 @@ export class SchemaLoader {
     }
   }
 
+  /**
+   * Recursively parse a (sub)schema to populate loader reference info.
+   *
+   * @param {object} schema - A JSON Schema
+   * @param {string} fetchUrl - Base path from which to store the definitions.
+   * @returns {array} Refs in the format of uri => true if external.
+   */
   _getExternalRefs (schema, fetchUrl) {
     const refs = {}
     const mergeRefs = newrefs => Object.keys(newrefs).forEach(i => { refs[i] = true })
 
     if (schema.$ref && typeof schema.$ref !== 'object') {
-      const refCounter = this.refs_prefix + this.refs_counter++
+      let refBase = schema.$ref
+      let pointer = ''
+      // Strip any JSON pointers found for external refs.
+      if (refBase.indexOf('#') > 0) refBase = refBase.substr(0, refBase.indexOf('#'))
+      if (refBase !== schema.$ref) pointer = schema.$ref.substr(schema.$ref.indexOf('#') + 1)
+      const refCounter = this.refs_prefix + this.refs_counter++ + pointer
       if (schema.$ref.substr(0, 1) !== '#' && !this.refs[schema.$ref]) {
-        refs[schema.$ref] = true
+        refs[refBase] = true
       }
-      this.refs_with_info[refCounter] = { fetchUrl, $ref: schema.$ref }
+      this.refs_with_info[refCounter] = { fetchUrl, $ref: refBase }
       schema.$ref = refCounter
     }
 
@@ -225,6 +272,18 @@ export class SchemaLoader {
     return uri.substr(0, 4) === 'urn:'
   }
 
+  /**
+   * Loads external references via AJAX.
+   *
+   * Will fail if this.options.ajax is not set to true.
+   *
+   * @param {object} schema - JSON Schema with external references.
+   * @param {function} callback - Function to call on completion of load.
+   * @param {string} fetchUrl - Base path from which to store the definitions.
+   *   Typically the URI of the schema.
+   * @param {string} fileBase - The base URL from which to load relative paths.
+   *   Typically the URI of the schema minus filename, with trailing slash.
+   */
   _loadExternalRefs (schema, callback, fetchUrl, fileBase) {
     const refs = this._getExternalRefs(schema, fetchUrl)
     let done = false; let waiting = 0
@@ -310,13 +369,13 @@ export class SchemaLoader {
           this.refs[uri] = schema
           const fileBase = this._getFileBaseFromFileLocation(url)
 
-          // add leading slash
+          this._getDefinitions(schema, `${uri}#/definitions/`)
+
+          // Add leading slash.
           if (url !== uri) {
             const pathItems = url.split('/')
             url = (uri.substr(0, 1) === '/' ? '/' : '') + pathItems.pop()
           }
-
-          this._getDefinitions(schema, `${url}#/definitions/`)
           this._loadExternalRefs(schema, () => {
             waiting--
             if (done && !waiting) {

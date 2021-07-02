@@ -1,0 +1,18 @@
+{
+    "$schema": "https://json-schema.org/draft-04/schema",
+    "title": "Reusable Definitions",
+    "type": "object",
+    "id": "https://raw.githubusercontent.com/json-editor/json-editor/master/tests/fixtures/definitions.json",
+    "definitions": {
+        "address": {
+            "title": "Address",
+            "type": "object",
+            "properties": {
+                "street_address": { "type": "string" },
+                "city":           { "type": "string" },
+                "state":          { "type": "string" }
+            },
+            "required": ["street_address"]
+        }
+    }
+  }
