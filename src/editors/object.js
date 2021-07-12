@@ -1203,7 +1203,7 @@ export class ObjectEditor extends AbstractEditor {
         editor.setValue(value[i], initial)
         editor.activate()
         /* Otherwise, remove value unless this is the initial set or it's required */
-      } else if (!initial && !this.isRequiredObject(editor)) {
+      } else if (!initial && !this.isRequiredObject(editor) && !this.options.show_non_required_editors) {
         if (this.jsoneditor.options.show_opt_in || this.options.show_opt_in) {
           editor.deactivate()
         } else {

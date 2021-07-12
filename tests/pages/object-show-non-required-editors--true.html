@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="../../dist/jsoneditor.js"></script>
+</head>
+<body>
+
+<textarea class="value" cols="30" rows="10"></textarea>
+<button class='get-value'>get value</button>
+<div class='container'></div>
+
+<script>
+  var container = document.querySelector('.container');
+  var value = document.querySelector('.value');
+  var getValue = document.querySelector('.get-value');
+
+  var schema = {
+    "type": "array",
+    "format": "tabs-top",
+    "maxItems": 8,
+    "uniqueItems": true,
+    "items": {
+      "type": "object",
+      "title": "Day",
+      "headerTemplate": "{{ self.dayCode }}",
+      "required": [
+        "dayCode"
+      ],
+      "options": {
+        "show_non_required_editors": true
+      },
+      "properties": {
+        "id": {
+          "type": "number",
+          "title": "ID",
+          "options": {
+            "hidden": true
+          },
+          "default": ""
+        },
+        "dayCode": {
+          "type": "string",
+          "title": "Day",
+          "options": {
+            "disable": true
+          },
+          "enumSource": [
+            {
+              "source": [
+                {
+                  "value": "MO",
+                  "title": "Monday"
+                }
+              ],
+              "title": "{{item.title}}",
+              "value": "{{item.value}}"
+            }
+          ]
+        },
+        "startTime": {
+          "type": "string",
+          "title": "Open",
+          "options": {
+            "infoText": "Example 9:00",
+            "inputAttributes": {
+              "placeholder": "9:00"
+            }
+          }
+        }
+      }
+    }
+  };
+
+  var editor = new JSONEditor(container, {
+    schema: schema,
+    show_errors: 'always'
+  });
+
+  editor.setValue([{
+    "dayCode": "MO"
+  }])
+
+  getValue.addEventListener('click', function () {
+    value.value = JSON.stringify(editor.getValue());
+    console.log(editor.getValue());
+  });
+
+</script>
+
+</body>
+</html>
