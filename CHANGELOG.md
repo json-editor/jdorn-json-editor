@@ -8,6 +8,7 @@
 ### 2.5.4
 
 - fixes #997 add accessibility support for string input types
+- fix bug in validator.fitTest where anyOf schemata were not handled correctly
 
 ### 2.5.3
 
