@@ -81,10 +81,11 @@ export class SchemaLoader {
   }
 
   load (schema, callback, fetchUrl, location) {
+    this.fileBase = this._getFileBase(location)
     this._loadExternalRefs(schema, () => {
-      this._getDefinitions(schema, `${fetchUrl}#/definitions/`)
+      this._getDefinitions(schema, '#')
       callback(this.expandRefs(schema))
-    }, fetchUrl, this._getFileBase(location))
+    }, fetchUrl, this.fileBase)
   }
 
   expandRefs (schema, recurseAllOf) {
@@ -93,21 +94,19 @@ export class SchemaLoader {
 
     const refObj = this.refs_with_info[_schema.$ref]
     delete _schema.$ref
-    const fetchUrl = refObj.$ref.startsWith('#')
-      ? refObj.fetchUrl
-      : ''
-    const ref = this._getRef(fetchUrl, refObj)
-    if (!this.refs[ref]) { /* if reference not found */
+    const refUri = refObj.refUri
+    const refSchema = this.refs[refUri]
+    if (!refSchema) { /* if reference not found */
       // eslint-disable-next-line no-console
-      console.warn(`reference:'${ref}' not found!`)
-    } else if (recurseAllOf && hasOwnProperty(this.refs[ref], 'allOf')) {
-      const allOf = this.refs[ref].allOf
+      console.warn(`reference:'${refUri}' not found!`)
+    } else if (recurseAllOf && hasOwnProperty(refSchema, 'allOf')) {
+      const allOf = refSchema.allOf
       Object.keys(allOf).forEach(key => {
         allOf[key] = this.expandRefs(allOf[key], true)
       })
     }
 
-    return this.extendSchemas(_schema, this.expandSchema(this.refs[ref]))
+    return this.extendSchemas(_schema, this.expandSchema(refSchema))
   }
 
   expandSchema (schema, fileBase) {
@@ -128,10 +127,35 @@ export class SchemaLoader {
     return this.expandRefs(extended)
   }
 
-  _getRef (fetchUrl, refObj) {
-    const ref = fetchUrl + refObj
+  _getRef (ref, fetchUrl) {
+    if (ref.startsWith('http://') ||
+      ref.startsWith('https://') ||
+      ref.startsWith('blob:') ||
+      ref.startsWith('data:') ||
+      ref.startsWith('urn:')
+    ) {
+      return ref
+    }
 
-    return this.refs[ref] ? ref : fetchUrl + decodeURIComponent(refObj.$ref)
+    if ((ref.startsWith('#') || ref.startsWith('/')) &&
+      fetchUrl === document.location.origin + document.location.pathname
+    ) {
+      return ref
+    }
+
+    if (ref.startsWith('/')) {
+      return this._isRemote(fetchUrl) ? fetchUrl.substr(0, fetchUrl.indexOf('/', 8)) + ref : this.fileBase + ref
+    }
+
+    if (ref.startsWith('#') && !fetchUrl.endsWith('/')) {
+      return this._isRemote(fetchUrl) ? fetchUrl + ref : ref
+    }
+
+    return fetchUrl.match(/.*\//)[0] + ref
+  }
+
+  _getRefUri (ref, fetchUrl, fileBase) {
+    return this._getRef(ref, this._getRef(fetchUrl, fileBase))
   }
 
   _expandSubSchema (subschema) {
@@ -142,27 +166,38 @@ export class SchemaLoader {
     return this.expandSchema(subschema)
   }
 
-  _getDefinitions (schema, path) {
+  _getDefinitions (schema, prefix) {
+    if (schema.$defs) {
+      const path = prefix + '/$defs/'
+      Object.keys(schema.$defs).forEach(i => {
+        this.refs[path + i] = schema.$defs[i]
+        if (schema.$defs[i].$defs) {
+          this._getDefinitions(schema.$defs[i], `${path + i}`)
+        }
+      })
+    }
     if (schema.definitions) {
+      const path = prefix + '/definitions/'
       Object.keys(schema.definitions).forEach(i => {
         this.refs[path + i] = schema.definitions[i]
         if (schema.definitions[i].definitions) {
-          this._getDefinitions(schema.definitions[i], `${path + i}/definitions/`)
+          this._getDefinitions(schema.definitions[i], `${path + i}`)
         }
       })
     }
   }
 
-  _getExternalRefs (schema, fetchUrl) {
+  _getExternalRefs (schema, fetchUrl, fileBase) {
     const refs = {}
-    const mergeRefs = newrefs => Object.keys(newrefs).forEach(i => { refs[i] = true })
+    const mergeRefs = newrefs => Object.keys(newrefs).forEach(i => { if (!refs[i]) refs[i] = true })
 
-    if (schema.$ref && typeof schema.$ref !== 'object') {
+    if (schema.$ref && typeof schema.$ref === 'string') {
       const refCounter = this.refs_prefix + this.refs_counter++
-      if (schema.$ref.substr(0, 1) !== '#' && !this.refs[schema.$ref]) {
-        refs[schema.$ref] = true
+      const refUri = this._getRefUri(schema.$ref, fetchUrl, fileBase)
+      if (!this.refs[refUri]) {
+        refs[refUri] = true
       }
-      this.refs_with_info[refCounter] = { fetchUrl, $ref: schema.$ref }
+      this.refs_with_info[refCounter] = { fetchUrl: fetchUrl, $ref: schema.$ref, refUri: refUri }
       schema.$ref = refCounter
     }
 
@@ -171,17 +206,17 @@ export class SchemaLoader {
       if (Array.isArray(value)) {
         Object.values(value).forEach(e => {
           if (e && typeof e === 'object') {
-            mergeRefs(this._getExternalRefs(e, fetchUrl))
+            mergeRefs(this._getExternalRefs(e, fetchUrl, fileBase))
           }
         })
       } else {
-        mergeRefs(this._getExternalRefs(value, fetchUrl))
+        mergeRefs(this._getExternalRefs(value, fetchUrl, fileBase))
       }
     })
 
-    if (schema.id && typeof schema.id === 'string' && schema.id.substr(0, 4) === 'urn:') {
+    if (schema.id && typeof schema.id === 'string' && schema.id.startsWith('urn:')) {
       this.refs[schema.id] = schema
-    } else if (schema.$id && typeof schema.$id === 'string' && schema.$id.substr(0, 4) === 'urn:') {
+    } else if (schema.$id && typeof schema.$id === 'string' && schema.$id.startsWith('urn:')) {
       this.refs[schema.$id] = schema
     }
 
@@ -189,28 +224,22 @@ export class SchemaLoader {
   }
 
   _getFileBase (location) {
-    if (!location) return '/'
-
     const { ajaxBase } = this.options
-
     return typeof ajaxBase === 'undefined' ? this._getFileBaseFromFileLocation(location) : ajaxBase
   }
 
   _getFileBaseFromFileLocation (fileLocationString) {
+    if (!fileLocationString) return ''
     const pathItems = fileLocationString.split('/')
     pathItems.pop()
-    return `${pathItems.join('/')}/`
+    return `${pathItems.join('/')}`
   }
 
   _joinUrl (url, fileBase) {
     var fetchUrl = url
 
-    if (url.substr(0, 7) !== 'http://' &&
-      url.substr(0, 8) !== 'https://' &&
-      url.substr(0, 5) !== 'blob:' &&
-      url.substr(0, 5) !== 'data:' &&
-      url.substr(0, 1) !== '#' &&
-      url.substr(0, 1) !== '/'
+    if (!this._isRemote(url) && !this._isLocal(url) &&
+      fileBase !== document.location.origin + document.location.pathname
     ) {
       fetchUrl = fileBase + url
     }
@@ -221,18 +250,27 @@ export class SchemaLoader {
     return fetchUrl
   }
 
+  _isLocal (uri) {
+    return uri.startsWith('#') || uri.startsWith('blob:') || uri.startsWith('data:')
+  }
+
+  _isRemote (uri) {
+    return uri.startsWith('http://') || uri.startsWith('https://')
+  }
+
   _isUniformResourceName (uri) {
-    return uri.substr(0, 4) === 'urn:'
+    return uri.startsWith('urn:')
   }
 
   _loadExternalRefs (schema, callback, fetchUrl, fileBase) {
-    const refs = this._getExternalRefs(schema, fetchUrl)
+    const refs = this._getExternalRefs(schema, fetchUrl, fileBase)
     let done = false; let waiting = 0
 
     Object.keys(refs).forEach(uri => {
-      if (this.refs[uri]) return
+      if (this._isLocal(uri)) return
 
       if (this._isUniformResourceName(uri)) {
+        if (this.refs[uri]) return
         this.refs[uri] = 'loading'
         waiting++
 
@@ -259,7 +297,7 @@ export class SchemaLoader {
               throw new Error(`External ref does not contain a valid schema - ${urn}`)
             }
             this.refs[uri] = schema
-            this._getDefinitions(schema, `${urn}#/definitions/`)
+            this._getDefinitions(schema, `${urn}#`)
             this._loadExternalRefs(schema, () => {
               waiting--
               if (done && !waiting) {
@@ -282,10 +320,14 @@ export class SchemaLoader {
         return
       }
 
+      const url = this._joinUrl(uri, fileBase)
+      if (!this._isRemote(url)) return
+
       if (!this.options.ajax) throw new Error(`Must set ajax option to true to load external ref ${uri}`)
+
+      if (this.refs[uri]) return
       this.refs[uri] = 'loading'
       waiting++
-      let url = this._joinUrl(uri, fileBase)
 
       const r = new XMLHttpRequest()
       r.overrideMimeType('application/json')
@@ -308,15 +350,10 @@ export class SchemaLoader {
           }
 
           this.refs[uri] = schema
-          const fileBase = this._getFileBaseFromFileLocation(url)
+          const fileBase = this._getFileBaseFromFileLocation(url) + '/'
 
-          // add leading slash
-          if (url !== uri) {
-            const pathItems = url.split('/')
-            url = (uri.substr(0, 1) === '/' ? '/' : '') + pathItems.pop()
-          }
-
-          this._getDefinitions(schema, `${url}#/definitions/`)
+          if (uri.indexOf('#') > 0) uri = uri.substr(0, uri.indexOf('#'))
+          this._getDefinitions(schema, `${uri}#`)
           this._loadExternalRefs(schema, () => {
             waiting--
             if (done && !waiting) {

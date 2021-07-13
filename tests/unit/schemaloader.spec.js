@@ -10,8 +10,7 @@ describe('SchemaLoader', () => {
 
   describe('when no external ref', () => {
     beforeEach(() => {
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader()
       fileBase = loader._getFileBase(document.location.toString())
     })
@@ -28,8 +27,7 @@ describe('SchemaLoader', () => {
         }
       }
       loader.load(schema, schema => {}, fetchUrl, fileBase)
-      const urls = Object.keys(loader.refs)
-      expect(urls.length).toEqual(0)
+      expect(Object.keys(loader.refs).length).toEqual(0)
     })
 
     it('load schema with $ref', () => {
@@ -37,6 +35,7 @@ describe('SchemaLoader', () => {
         definitions: {
           name: {
             type: 'string',
+            default: 'Waldo',
             minLength: 4
           }
         },
@@ -47,8 +46,29 @@ describe('SchemaLoader', () => {
         }
       }
       loader.load(schema, schema => {}, fetchUrl, fileBase)
-      const urls = Object.keys(loader.refs)
-      expect(urls.length).toEqual(1)
+      expect(Object.keys(loader.refs).length).toEqual(1)
+      expect(Object.keys(loader.refs_with_info).length).toEqual(2)
+    })
+
+    it('load propertyNames schema with $ref', () => {
+      const schema = {
+        definitions: {
+          isoa2: {
+            enum: ['CA', 'US']
+          }
+        },
+        type: 'object',
+        patternProperties: {
+          '': { type: 'integer' }
+        },
+        propertyNames: {
+          $ref: '#/definitions/isoa2'
+        },
+        additionalProperties: true
+      }
+      loader.load(schema, schema => {}, fetchUrl, fileBase)
+      expect(Object.keys(loader.refs).length).toEqual(1)
+      expect(Object.keys(loader.refs_with_info).length).toEqual(1)
     })
 
     it('load schema with urn: $ref', () => {
@@ -74,27 +94,27 @@ describe('SchemaLoader', () => {
         }
       }
       loader.load(schema, schema => {}, fetchUrl, fileBase)
-      const urls = Object.keys(loader.refs)
-      expect(urls.length).toEqual(4)
+      expect(Object.keys(loader.refs).length).toEqual(4)
+      expect(Object.keys(loader.refs_with_info).length).toEqual(2)
     })
   })
 
   describe('when external absolute ref exists', () => {
-    it('should set oprion { ajax: true }', done => {
+    it('should set option { ajax: true }', done => {
       const response = {
         type: 'string',
+        default: 'Waldo',
         minLength: 4
       }
       const server = createFakeServer()
       server.autoRespond = true
       window.XMLHttpRequest = server.xhr
-      server.respondWith('/string.json', [
+      server.respondWith([
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(response)
       ])
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ ajax: true })
       fileBase = loader._getFileBase(document.location.toString())
 
@@ -108,8 +128,8 @@ describe('SchemaLoader', () => {
       loader.load(
         schema,
         schema => {
-          const urls = Object.keys(loader.refs)
-          expect(urls.length).toEqual(1)
+          expect(Object.keys(loader.refs).length).toEqual(1)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(2)
           done()
           server.restore()
         },
@@ -120,21 +140,21 @@ describe('SchemaLoader', () => {
   })
 
   describe('when external relative $ref exists', () => {
-    it('should set oprion { ajax: true }', done => {
+    it('should set option { ajax: true }', done => {
       const response = {
         type: 'string',
+        default: 'Waldo',
         minLength: 4
       }
       const server = createFakeServer()
       server.autoRespond = true
       window.XMLHttpRequest = server.xhr
-      server.respondWith('/string.json', [
+      server.respondWith([
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(response)
       ])
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ ajax: true })
       fileBase = loader._getFileBase(document.location.toString())
 
@@ -148,8 +168,8 @@ describe('SchemaLoader', () => {
       loader.load(
         schema,
         schema => {
-          const urls = Object.keys(loader.refs)
-          expect(urls.length).toEqual(1)
+          expect(Object.keys(loader.refs).length).toEqual(1)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(2)
           done()
           server.restore()
         },
@@ -173,29 +193,30 @@ describe('SchemaLoader', () => {
       }
       const schema3 = {
         type: 'string',
+        default: 'Waldo',
         minLength: 4
       }
       const server = createFakeServer()
       server.autoRespond = true
       window.XMLHttpRequest = server.xhr
-      server.respondWith('/schema/main.json', [
+      server.respondWith(/schema\/main\.json/, [
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(schema2)
       ])
-      server.respondWith('/schema/registry/sub.json', [
+      server.respondWith(/schema\/registry\/sub\.json/, [
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(schema3)
       ])
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ ajax: true })
       fileBase = loader._getFileBase(document.location.toString())
       loader.load(
         schema1,
         schema => {
           expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(3)
           done()
           server.restore()
         },
@@ -219,30 +240,30 @@ describe('SchemaLoader', () => {
       }
       const schema3 = {
         type: 'string',
+        default: 'Waldo',
         minLength: 4
       }
       const server = createFakeServer()
       server.autoRespond = true
       window.XMLHttpRequest = server.xhr
-      server.respondWith('/schema/main.json', [
+      server.respondWith(/schema\/main\.json/, [
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(schema2)
       ])
-      server.respondWith('/schema/registry/sub.json', [
+      server.respondWith(/schema\/registry\/sub\.json/, [
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(schema3)
       ])
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ ajax: true })
       fileBase = loader._getFileBase(document.location.toString())
       loader.load(
         schema1,
         schema => {
-          console.log(loader.refs)
           expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(3)
           done()
           server.restore()
         },
@@ -284,20 +305,19 @@ describe('SchemaLoader', () => {
       const server = createFakeServer()
       server.autoRespond = true
       window.XMLHttpRequest = server.xhr
-      server.respondWith('/common.schema.json', [
+      server.respondWith([
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(schema2)
       ])
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ ajax: true })
       fileBase = loader._getFileBase(document.location.toString())
       loader.load(
         schema1,
         schema => {
-          console.log(loader.refs)
-          expect(Object.keys(loader.refs).length).toBe(2)
+	  expect(Object.keys(loader.refs).length).toBe(3)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(6)
           done()
           server.restore()
         },
@@ -339,20 +359,19 @@ describe('SchemaLoader', () => {
       const server = createFakeServer()
       server.autoRespond = true
       window.XMLHttpRequest = server.xhr
-      server.respondWith('/common.schema.json', [
+      server.respondWith([
         200,
         { 'Content-Type': 'application/json' },
         JSON.stringify(schema2)
       ])
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ ajax: true })
       fileBase = loader._getFileBase(document.location.toString())
       loader.load(
         schema1,
         schema => {
-          console.log(loader.refs)
           expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(5)
           done()
           server.restore()
         },
@@ -383,8 +402,7 @@ describe('SchemaLoader', () => {
         { 'Content-Type': 'application/json' },
         JSON.stringify(response)
       ])
-      fetchUrl =
-        document.location.origin + document.location.pathname.toString()
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ ajax: true })
       fileBase = loader._getFileBase(document.location.toString())
 
@@ -397,10 +415,13 @@ describe('SchemaLoader', () => {
       loader.load(
         schema,
         schema => {
-          const urls = Object.keys(loader.refs)
-          expect(urls.length).toEqual(1)
-          expect(urls[0]).toEqual('/fruits.json#/definitions/fruits')
+          const refs = Object.keys(loader.refs)
+          expect(refs.length).toEqual(1)
+          expect(refs[0]).toEqual('/fruits.json#/definitions/fruits')
           expect(loader.refs['/fruits.json#/definitions/fruits']).toEqual({ enum: ['apple', 'banana', 'cherry'] })
+          const refs_with_info = Object.keys(loader.refs_with_info)
+          expect(refs_with_info.length).toEqual(1)
+          expect(loader.refs_with_info['#/counter/1'].$ref).toEqual('/fruits.json#/definitions/fruits')
           done()
           server.restore()
         },
@@ -437,6 +458,7 @@ describe('SchemaLoader', () => {
           }
         }
       }
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ urn_resolver: (urn, callback) => {
         if (urn === 'urn:main') {
           callback(JSON.stringify(schema2))
@@ -451,10 +473,11 @@ describe('SchemaLoader', () => {
       loader.load(
         schema1,
         schema => {
-          console.log(loader.refs_with_info)
           expect(Object.keys(loader.refs).length).toBe(4)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(3)
           done()
-        }
+        },
+        fetchUrl
       )
     })
   })
@@ -471,13 +494,13 @@ describe('SchemaLoader', () => {
       const schema2 = {
         definitions: {
           name: {
-            $id: 'urn:main',
             type: 'string',
             default: 'Waldo',
             minLength: 4
           }
         }
       }
+      fetchUrl = document.location.origin + document.location.pathname
       loader = new SchemaLoader({ urn_resolver: (urn, callback) => {
         if (urn === 'urn:main') {
           callback(JSON.stringify(schema2))
@@ -488,10 +511,116 @@ describe('SchemaLoader', () => {
       loader.load(
         schema1,
         schema => {
-          console.log(loader.refs_with_info)
-          expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs).length).toBe(1)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(2)
           done()
+        },
+        fetchUrl
+      )
+    })
+  })
+
+  describe('when external absolute-to-relative $ref with json pointer exists', () => {
+    it('can get refs recursively', done => {
+      const schema1 = {
+        type: 'object',
+        properties: {
+          fname: { $ref: '/schema/main.json' },
+          lname: { $ref: '/schema/main.json' }
         }
+      }
+      const schema2 = {
+        $ref: 'registry/sub.json#/definitions/name'
+      }
+      const schema3 = {
+        definitions: {
+          name: {
+            type: 'string',
+            default: 'Waldo',
+            minLength: 4
+          }
+        }
+      }
+      const server = createFakeServer()
+      server.autoRespond = true
+      window.XMLHttpRequest = server.xhr
+      server.respondWith(/schema\/main\.json/, [
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify(schema2)
+      ])
+      server.respondWith(/schema\/registry\/sub\.json/, [
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify(schema3)
+      ])
+      fetchUrl = document.location.origin + document.location.pathname
+      loader = new SchemaLoader({ ajax: true })
+      fileBase = loader._getFileBase(document.location.toString())
+      loader.load(
+        schema1,
+        schema => {
+          expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(3)
+          done()
+          server.restore()
+        },
+        fetchUrl,
+        fileBase
+      )
+    })
+  })
+
+  describe('$defs and nested ref', () => {
+    it('can get refs', done => {
+      const schema1 = {
+        type: 'object',
+        properties: {
+          'test-1': { $ref: 'common.schema.json#/$defs/nested-name' }
+        }
+      }
+      const schema2 = {
+        $defs: {
+          'nested-name': {
+            $ref: 'name.json#/$defs/name'
+          }
+        }
+      }
+      const schema3 = {
+        $defs: {
+          name: {
+            type: 'string',
+            default: 'Waldo',
+            minLength: 4
+          }
+        }
+      }
+      const server = createFakeServer()
+      server.autoRespond = true
+      window.XMLHttpRequest = server.xhr
+      server.respondWith(/common\.schema\.json/, [
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify(schema2)
+      ])
+      server.respondWith(/name\.json/, [
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify(schema3)
+      ])
+      fetchUrl = document.location.origin + document.location.pathname
+      loader = new SchemaLoader({ ajax: true })
+      fileBase = loader._getFileBase(document.location.toString())
+      loader.load(
+        schema1,
+        schema => {
+          expect(Object.keys(loader.refs).length).toBe(2)
+          expect(Object.keys(loader.refs_with_info).length).toEqual(2)
+          done()
+          server.restore()
+        },
+        fetchUrl,
+        fileBase
       )
     })
   })

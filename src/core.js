@@ -58,13 +58,14 @@ export class JSONEditor {
     this.element.appendChild(this.root_container)
 
     /* Fetch all external refs via ajax */
-    const fetchUrl = document.location.origin + document.location.pathname.toString()
+    const fetchUrl = document.location.origin + document.location.pathname
     const loader = new SchemaLoader(this.options)
     const location = document.location.toString()
 
     this.expandSchema = (schema, fileBase) => loader.expandSchema(schema, fileBase)
     this.expandRefs = (schema, fileBase) => loader.expandRefs(schema, fileBase)
     this.refs = loader.refs
+    this.refs_with_info = loader.refs_with_info
 
     loader.load(this.schema, schema => {
       const validatorOptions = this.options.custom_validators ? { custom_validators: this.options.custom_validators } : {}

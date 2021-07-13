@@ -406,6 +406,7 @@ export class Validator {
             })
             break
           }
+          schema.propertyNames = extend({}, this.jsoneditor.expandRefs(schema.propertyNames))
           truthy = Object.entries(schema.propertyNames).every(([j, prop]) => {
             let match = false
             let regex = null
@@ -681,6 +682,7 @@ export class Validator {
         schema.additionalProperties = false
       }
 
+      /* `propertyNames` */
       /* `additionalProperties` */
       /* `dependencies` */
       Object.keys(schema).forEach(key => {
