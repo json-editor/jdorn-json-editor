@@ -8,8 +8,8 @@ export class jqueryuiTheme extends AbstractTheme {
     return el
   }
 
-  getTableHeaderCell (text) {
-    const el = super.getTableHeaderCell(text)
+  getTableHeaderCell (text, required) {
+    const el = super.getTableHeaderCell(text, required)
     el.classList.add('ui-state-active')
     el.style.fontWeight = 'bold'
     return el

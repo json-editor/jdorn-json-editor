@@ -258,8 +258,8 @@ export class tailwindTheme extends AbstractTheme {
     return el
   }
 
-  getTableHeaderCell (text) {
-    const el = super.getTableHeaderCell(text)
+  getTableHeaderCell (text, required) {
+    const el = super.getTableHeaderCell(text, required)
     if (this.options.table_border) el.classList.add('je-table-border')
     else if (this.options.table_hdiv) el.classList.add('je-table-hdiv')
     else el.classList.add('text-xs', 'border', 'p-0', 'm-0')

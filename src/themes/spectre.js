@@ -293,6 +293,13 @@ export class spectreTheme extends AbstractTheme {
     return el
   }
 
+  getTableHeaderCell (text, required) {
+    const el = document.createElement('th')
+    if (required) el.classList.add('required')
+    el.textContent = text
+    return el
+  }
+
   /* Function for rendering progressbar */
   getProgressBar () {
     const progressBar = super.getProgressBar()

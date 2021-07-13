@@ -86,19 +86,19 @@ export class TableEditor extends ArrayEditor {
       const ce = tmp.getChildEditors()
       const order = tmp.property_order || Object.keys(ce)
       for (let i = 0; i < order.length; i++) {
-        const th = this.theme.getTableHeaderCell(ce[order[i]].getTitle())
+        const th = this.theme.getTableHeaderCell(ce[order[i]].getTitle(), ce[order[i]].isRequired())
         if (ce[order[i]].options.hidden) th.style.display = 'none'
         this.header_row.appendChild(th)
       }
     } else {
-      this.header_row.appendChild(this.theme.getTableHeaderCell(this.item_title))
+      this.header_row.appendChild(this.theme.getTableHeaderCell(this.item_title, this.isRequired()))
     }
 
     tmp.destroy()
     this.row_holder.innerHTML = ''
 
     /* Row Controls column */
-    this.controls_header_cell = this.theme.getTableHeaderCell(' ')
+    this.controls_header_cell = this.theme.getTableHeaderCell(' ', false)
     this.header_row.appendChild(this.controls_header_cell)
 
     /* Add controls */
