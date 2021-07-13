@@ -600,6 +600,12 @@ export class bootstrap4Theme extends AbstractTheme {
   }
 
   getFirstTab (holder) {
+    // find the first non-hidden tab
+    for (let i = 0; i < holder.firstChild.firstChild.children.length; i++) {
+      if (holder.firstChild.firstChild.children[i].style.display !== 'none') {
+        return holder.firstChild.firstChild.children[i]
+      }
+    }
     return holder.firstChild.firstChild.firstChild
   }
 

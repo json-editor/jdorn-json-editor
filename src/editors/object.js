@@ -294,8 +294,13 @@ export class ObjectEditor extends AbstractEditor {
             this.theme.addTopTab(newTabsHolder, editor.tab)
           }
 
-          if (editor.options.hidden) editor.container.style.display = 'none'
-          else this.theme.setGridColumnSize(editor.container, 12)
+          if (editor.options.hidden) {
+            editor.container.style.display = 'none'
+            aPane.style.display = 'none'
+            editor.tab.style.display = 'none'
+          } else {
+            this.theme.setGridColumnSize(editor.container, 12)
+          }
           /* Now, add the property editor to the row */
           gridRow.appendChild(editor.container)
           /* Update the rowPane (same as this.rows[x].rowPane) */

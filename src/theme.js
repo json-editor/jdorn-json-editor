@@ -593,6 +593,12 @@ export class AbstractTheme {
   }
 
   getFirstTab (holder) {
+    // find the first non-hidden tab
+    for (let i = 0; i < holder.firstChild.children.length; i++) {
+      if (holder.firstChild.children[i].style.display !== 'none') {
+        return holder.firstChild.children[i]
+      }
+    }
     return holder.firstChild.firstChild
   }
 

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <!--<script src="../../jsoneditor.mod.js"></script>-->
+  <script src="../../dist/nonmin/jsoneditor.js"></script>
+
+</head>
+<body>
+
+<textarea class="value" cols="30" rows="10"></textarea>
+<button class='get-value'>get value</button>
+<button class='set-value'>set value</button>
+<button class='get-individual-value'>get individual value</button>
+<button class='set-individual-value'>set individual value</button>
+<button class='disable-form'>disable form</button>
+<button class='enable-form'>enable form</button>
+<button class='disable-part'>disable part</button>
+<button class='enable-part'>enable part</button>
+<button class='destroy'>destroy</button>
+<button class='form-changed' style="background: yellow; color: blue; display: none;">form changed</button>
+<button class='name-changed' style="background: green; color: white; display: none;">name changed</button>
+<div class='container'></div>
+
+<script>
+  var container = document.querySelector('.container');
+  var value = document.querySelector('.value');
+  var getValue = document.querySelector('.get-value');
+  var setValue = document.querySelector('.set-value');
+  var getIndividualValue = document.querySelector('.get-individual-value');
+  var setIndividualValue = document.querySelector('.set-individual-value');
+  var disableForm = document.querySelector('.disable-form');
+  var enableForm = document.querySelector('.enable-form');
+  var disablePart = document.querySelector('.disable-part');
+  var enablePart = document.querySelector('.enable-part');
+  var destroy = document.querySelector('.destroy');
+  var formChanged = document.querySelector('.form-changed');
+  var nameChanged = document.querySelector('.name-changed');
+
+  var schema = {
+    "title": "Person",
+    "type": "object",
+    "format":"categories",
+    "properties": {
+      "basevalue": {
+        "title": "BaseValue",
+        "type": "number",
+        "format": "number",
+        "default": 18,
+        "minimum": 0,
+        "maximum": 80
+      },
+      "ages":{
+        "type": "object",
+        "options":{
+          "hidden":true,
+        },
+        "properties": {
+          "age": {
+            "title": "Age",
+            "type": "number",
+            "format": "number",
+            "default": 18,
+            "minimum": 0,
+            "maximum": 80
+          },
+          "age2": {
+            "title": "Age2",
+            "type": "number",
+            "format": "number",
+            "default": 18,
+            "minimum": 0,
+            "maximum": 80
+          }
+        }
+      },
+      "names": {
+        "type": "object",
+        "properties": {
+          "name":{
+            "title": "Name",
+            "type": "string",
+            "default": "Francesco Avizzano"
+          }
+        }
+      }
+    }
+  };
+
+  var editor = new JSONEditor(container, {
+    schema: schema
+  });
+
+  var changeCallback = function () {
+    if (this.getCount()>1) formChanged.style.display = 'block'
+  }.bind({
+    count:0,
+    getCount: function(){return ++this.count;}
+  });
+  editor.on('change', changeCallback);
+
+  var watchCallback = function () {
+    nameChanged.style.display = 'block'
+  };
+  editor.watch('root.name', watchCallback);
+
+  getValue.addEventListener('click', function () {
+    value.value = JSON.stringify(editor.getValue());
+    console.log(editor.getValue());
+  });
+
+  setValue.addEventListener('click', function () {
+    editor.setValue({name: "John Smith", age: 40});
+  });
+
+  getIndividualValue.addEventListener('click', function () {
+    var name = editor.getEditor('root.name');
+    value.value = JSON.stringify(name.getValue());
+  });
+
+  setIndividualValue.addEventListener('click', function () {
+    var name = editor.getEditor('root.name');
+    name.setValue("john kaminski");
+    value.value = JSON.stringify(name.getValue());
+  });
+
+  disableForm.addEventListener('click', function () {
+    editor.disable();
+  });
+
+  enableForm.addEventListener('click', function () {
+    editor.enable();
+  });
+
+  disablePart.addEventListener('click', function () {
+    editor.getEditor('root.name').disable();
+  });
+
+  enablePart.addEventListener('click', function () {
+    editor.getEditor('root.name').enable();
+  });
+
+  destroy.addEventListener('click', function () {
+    editor.destroy();
+  });
+
+</script>
+
+</body>
+</html>
