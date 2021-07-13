@@ -33,18 +33,28 @@ export class MultiSelectEditor extends AbstractEditor {
     this.option_keys = []
     this.option_titles = []
 
-    let i
-    const itemsSchema = this.jsoneditor.expandRefs(this.schema.items || {})
-    const e = itemsSchema.enum || []
-    const t = itemsSchema.options ? itemsSchema.options.enum_titles || [] : []
+    if (!this.schema.items.enum) {
+      let callback
+      callback = this.expandCallbacks('template', { template: this.schema.items.options.values })
+      if (typeof callback.template === 'function') this.values_callback = callback.template
+      callback = this.expandCallbacks('template', { template: this.schema.items.options.titles })
+      if (typeof callback.template === 'function') this.titles_callback = callback.template
+      callback = this.expandCallbacks('template', { template: this.schema.items.options.updated })
+      if (typeof callback.template === 'function') this.updated_callback = callback.template
+    } else {
+      let i
+      const itemsSchema = this.jsoneditor.expandRefs(this.schema.items || {})
+      const e = itemsSchema.enum || []
+      const t = itemsSchema.options ? itemsSchema.options.enum_titles || [] : []
 
-    for (i = 0; i < e.length; i++) {
-      /* If the sanitized value is different from the enum value, don't include it */
-      if (this.sanitize(e[i]) !== e[i]) continue
+      for (i = 0; i < e.length; i++) {
+        /* If the sanitized value is different from the enum value, don't include it */
+        if (this.sanitize(e[i]) !== e[i]) continue
 
-      this.option_keys.push(`${e[i]}`)
-      this.option_titles.push(`${t[i] || e[i]}`)
-      this.select_values[`${e[i]}`] = e[i]
+        this.option_keys.push(`${e[i]}`)
+        this.option_titles.push(`${t[i] || e[i]}`)
+        this.select_values[`${e[i]}`] = e[i]
+      }
     }
   }
 

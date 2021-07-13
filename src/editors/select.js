@@ -138,6 +138,10 @@ export class SelectEditor extends AbstractEditor {
       /* Now, enumSource is an array of sources */
       /* Walk through this array and fix up the values */
       for (i = 0; i < this.enumSource.length; i++) {
+        if (this.enumSource[i].source) {
+          callback = this.expandCallbacks('template', { template: this.enumSource[i].source })
+          if (typeof callback.template === 'function') this.enumSource[i].source = callback.template
+        }
         if (this.enumSource[i].value) {
           callback = this.expandCallbacks('template', { template: this.enumSource[i].value })
           if (typeof callback.template === 'function') this.enumSource[i].value = callback.template
@@ -234,8 +238,12 @@ export class SelectEditor extends AbstractEditor {
           selectTitles = selectTitles.concat(this.enumSource[i])
         } else {
           let items = []
+          /* Dynamic retrived list of items from callback */
+          if (typeof this.enumSource[i].source === 'function') {
+            var newItems = this.enumSource[i].source({ watched: vars })
+            if (Array.isArray(newItems)) items = newItems
           /* Static list of items */
-          if (Array.isArray(this.enumSource[i].source)) {
+          } else if (Array.isArray(this.enumSource[i].source)) {
             items = this.enumSource[i].source
             /* A watched field */
           } else {
